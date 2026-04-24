@@ -1,5 +1,3 @@
-
-
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -11,32 +9,62 @@ const connectDB = require("./src/config/db");
 
 const app = express();
 
-// connect database
+// connect DB
 connectDB();
 
-// middleware
+// trust proxy (Render)
+app.set("trust proxy", 1);
+
+// security headers
 app.use(helmet());
 
-// set up rate limiter: maximum of 100 requests per 15 minutes
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again in 15 minutes"
-});
-app.use("/api/", limiter); // applies to API routes
+// allowed frontend origins
+const allowedOrigins = [
+  "https://orchidhackx.vercel.app",
+  "https://orchidhackx.oic.edu.np",
+  "http://localhost:5173",
+];
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173", // update with your production frontend URL if different
-  credentials: true
-}));
+// CORS setup
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log("Blocked CORS:", origin);
+    return callback(null, false);
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+// parse JSON
 app.use(express.json());
-// Express 5.x compatibility for Mongo Sanitize
-// (Express 5 makes req.query immutable, so we manually sanitize the necessary objects)
+
+// rate limiter (API protection)
+app.use(
+  "/api/",
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: "Too many requests, try later" },
+    standardHeaders: true,
+    legacyHeaders: false,
+  })
+);
+
+// sanitize data
 app.use((req, res, next) => {
   if (req.body) req.body = mongoSanitize.sanitize(req.body);
   if (req.params) req.params = mongoSanitize.sanitize(req.params);
   next();
 });
+
 // test route
 app.get("/", (req, res) => {
   res.send("API running...");
@@ -45,8 +73,22 @@ app.get("/", (req, res) => {
 // routes
 app.use("/api/register", require("./src/routes/registrationRoutes"));
 
-const PORT = process.env.PORT || 5000;
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
 
+// error handler
+app.use((err, req, res, next) => {
+  console.error("Server Error:", err.message);
+
+  res.status(err.status || 500).json({
+    error: err.message || "Internal Server Error",
+  });
+});
+
+// start server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
