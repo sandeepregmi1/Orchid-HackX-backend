@@ -69,6 +69,15 @@ app.get("/", (req, res) => {
   res.send("API running...");
 });
 
+
+
+// health check route (for cron ping)
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+
+
 // routes
 app.use("/api/register", require("./src/routes/registrationRoutes"));
 
