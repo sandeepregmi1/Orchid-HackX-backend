@@ -1,3 +1,4 @@
+// /home/sandeep/orchidhackx-2026/backend/src/controllers/registrationController.js
 const Registration = require("../models/Registration");
 
 // @desc    Create new registration
@@ -6,14 +7,21 @@ const Registration = require("../models/Registration");
 
 const createRegistration = async (req, res) => {
   try {
-    const { email, age, full_name, track, institution } = req.body;
+    const {
+      email,
+      age,
+      full_name,
+      track,
+      institution,
+      github_portfolio,
+      linkedin,
+    } = req.body;
 
-    // 1. Basic validation
-    const { github_portfolio } = req.body;
-    if (!email || !full_name || !track || !institution || !github_portfolio || github_portfolio.trim() === '') {
+    // 1. Basic validation (ONLY required fields)
+    if (!email || !full_name || !track || !institution) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required fields (including GitHub)",
+        message: "Please provide all required fields",
       });
     }
 
@@ -43,9 +51,15 @@ const createRegistration = async (req, res) => {
       });
     }
 
+    // 5. Clean payload (safe handling of optional fields)
+    const payload = {
+      ...req.body,
+      github_portfolio: github_portfolio || null,
+      linkedin: linkedin || null,
+    };
 
-    // 5. Save to MongoDB
-    const newRegistration = await Registration.create(req.body);
+    // 6. Save to MongoDB
+    const newRegistration = await Registration.create(payload);
 
     res.status(201).json({
       success: true,
@@ -53,10 +67,12 @@ const createRegistration = async (req, res) => {
       data: newRegistration,
     });
   } catch (error) {
-    if (error.name === 'ValidationError') {
+    if (error.name === "ValidationError") {
       return res.status(400).json({
         success: false,
-        message: Object.values(error.errors).map(val => val.message).join(', ')
+        message: Object.values(error.errors)
+          .map((val) => val.message)
+          .join(", "),
       });
     }
 

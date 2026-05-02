@@ -1,9 +1,10 @@
+// /home/sandeep/orchidhackx-2026/backend/src/models/Registration.js
 const mongoose = require("mongoose");
 
 // Team member sub-schema
 const TeamMemberSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  github: { type: String }
+  github: { type: String, default: null },
 });
 
 // Main registration schema
@@ -18,8 +19,8 @@ const RegistrationSchema = new mongoose.Schema(
     role: { type: String, default: "Developer" },
     track: { type: String, required: true },
 
-    github_portfolio: { type: String, required: true },
-    linkedin: { type: String },
+    github_portfolio: { type: String, default: null  },
+    linkedin: { type: String, default: null },
 
     team_name: { type: String },
     team_size: { type: Number, required: true },
