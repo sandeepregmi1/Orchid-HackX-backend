@@ -5,6 +5,9 @@ const mongoose = require("mongoose");
 const TeamMemberSchema = new mongoose.Schema({
   name: { type: String, required: true },
   github: { type: String, default: null },
+  email: { type: String, required: true },
+  age: { type: Number, required: true },
+  phoneNumber: { type: String, required: true }
 });
 
 // Main registration schema
@@ -19,7 +22,7 @@ const RegistrationSchema = new mongoose.Schema(
     role: { type: String, default: "Developer" },
     track: { type: String, required: true },
 
-    github_portfolio: { type: String, default: null  },
+    github_portfolio: { type: String, default: null },
     linkedin: { type: String, default: null },
 
     team_name: { type: String },
